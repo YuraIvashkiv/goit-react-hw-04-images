@@ -1,70 +1,70 @@
-import { Component } from 'react';
 import { Searchbar } from './Searchbar/Searchbar';
 import { Button } from './Button/Button';
 import { ImageGallery } from './ImageGallery/ImageGallery';
 import { AppStyle } from './App.styled';
 import { getPictures } from './api';
 import { Loader } from './Loader/Loader';
+import { useEffect, useState } from 'react';
 
-export class App extends Component {
-  state = {
-    query: '',
-    images: [],
-    page: 1,
-    loadingImgCount: 0,
-    isLoading: false,
-  };
+export const App = () => {
+  const [query, setQuery] = useState('');
+  const [images, setImages] = useState([]);
+  const [page, setPage] = useState(1);
+  const [loadingImgCount, setLoadingImgCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
 
-  changeQuery = newQuery => {
-    this.setState(prevState => ({
-      query: `${Date.now()}/${newQuery}`,
-      images: [],
-      page: 1,
-    }));
-  };
 
-  async componentDidUpdate(prevProps, prevState) {
-    const newQuery = this.state.query;
-    if (
-      prevState.query !== this.state.query ||
-      prevState.page !== this.state.page
-    ) {
-      const result = newQuery.slice(newQuery.indexOf('/') + 1);
 
-      this.setState({ isLoading: true });
+    const changeQuery = newQuery => {
+      setQuery( `${Date.now()}/${newQuery}`
+      );
+      console.log(`${Date.now()}/${newQuery}`);
+      setImages([]);
+      setPage( 1);
+    };
 
+  useEffect(() => {
+    
+    if (query === '') 
+      return;
+     getImages(); 
+    
+    async function getImages() {
+       const result = query.slice(query.indexOf('/') + 1);
       try {
-        const data = await getPictures(result, this.state.page);
+        setIsLoading(true);
+                const data = await getPictures(result, page);
 
-        this.setState(prevState => ({
-          images: [...prevState.images, ...data.hits],
-          loading: false,
-          loadingImgCount: Math.ceil(data.totalHits / 12),
-        }));
-      } catch (error) {
-        console.error('Помилка при отриманні даних:', error);
-      } finally {
-        this.setState({ isLoading: false });
-      }
+        setImages(prevState => [...prevState, ...data.hits]);
+                 setLoadingImgCount( Math.ceil(data.totalHits / 12),
+         );
+       } catch (error) {
+         console.error('Помилка при отриманні даних:', error);
+       } finally {
+         setIsLoading(false);
+       }          
     }
-  }
-  handleLoadMore = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
-  };
+   
+  }, [page,query])
+  
 
-  render() {
-    return (
-      <AppStyle>
-        <Searchbar onSubmit={this.changeQuery} />
-        <ImageGallery images={this.state.images} />
-        {this.state.isLoading && <Loader />}
-        <div>
-          {this.state.images.length !== 0 &&
-            this.state.loadingImgCount !== this.state.page && (
-              <Button onClick={this.handleLoadMore} />
-            )}
-        </div>
-      </AppStyle>
-    );
-  }
-}
+
+  const handleLoadMore = () => {
+    setPage(prevState =>
+     prevState + 1 );
+ };
+
+  return (
+    <AppStyle>
+      <Searchbar onSubmit={changeQuery} />
+      <ImageGallery images={images} />
+      {isLoading && <Loader />}
+      <div>
+        {images.length !== 0 &&
+          loadingImgCount !== page && (
+            <Button onClick={handleLoadMore} />
+          )}
+      </div>
+    </AppStyle>
+  );
+};
